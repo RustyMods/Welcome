@@ -15,7 +15,7 @@ public static class Intro
 
     private static List<string> WelcomeText = new();
     
-    public static void InitCustomIntro()
+    public static void Setup()
     {
         if (!Directory.Exists(FolderPath)) Directory.CreateDirectory(FolderPath);
         if (!File.Exists(WelcomeFilePath))

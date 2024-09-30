@@ -8,22 +8,30 @@ namespace Welcome.Introductions;
 
 public static class Patches
 {
+    private static bool m_firstSpawn = true;
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
     private static class ModifyIntroText
     {
         private static void Prefix(Player __instance)
         {
-            if (!__instance) return;
+            if (!__instance || __instance != Player.m_localPlayer || !m_firstSpawn) return;
             if (WelcomePlugin._PluginEnabled.Value is WelcomePlugin.Toggle.Off) return;
             if (WelcomePlugin._AlwaysShowIntro.Value is WelcomePlugin.Toggle.Off) return;
             TextViewer.instance.ShowText(TextViewer.Style.Intro, "CustomIntro", Intro.ConvertWelcomeList(), true);
+            m_firstSpawn = false;
         }
     }
 
-    [HarmonyPatch(typeof(Valkyrie), nameof(Valkyrie.ShowText))]
+    [HarmonyPatch(typeof(Game), nameof(Game.Logout))]
+    private static class Game_Logout_Patch
+    {
+        private static void Postfix() => m_firstSpawn = true;
+    }
+    
+    [HarmonyPatch(typeof(Game), nameof(Game.ShowIntro))]
     private static class ValkyrieTextOverride
     {
-        private static void Prefix(Valkyrie __instance)
+        private static void Prefix(Game __instance)
         {
             if (!__instance) return;
             if (WelcomePlugin._PluginEnabled.Value is WelcomePlugin.Toggle.Off) return;
@@ -55,18 +63,14 @@ public static class Patches
             }
 
             Transform blob = screen.transform.Find("blob");
-            if (blob)
+            if (!blob) return;
+            if (!blob.TryGetComponent(out Image BlobImage)) return;
+            if (TextureManager.CustomBackground == null)
             {
-                if (blob.TryGetComponent(out Image BlobImage))
-                {
-                    if (TextureManager.CustomBackground == null)
-                    {
-                        Debug.LogWarning("No custom background found");
-                        return;
-                    }
-                    BlobImage.sprite = TextureManager.CustomBackground;
-                }
+                WelcomePlugin.WelcomeLogger.LogDebug("No custom background found");
+                return;
             }
+            BlobImage.sprite = TextureManager.CustomBackground;
         }
     }
 }

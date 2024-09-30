@@ -16,11 +16,11 @@ namespace Welcome
     public class WelcomePlugin : BaseUnityPlugin
     {
         internal const string ModName = "Welcome";
-        internal const string ModVersion = "1.0.0";
+        internal const string ModVersion = "1.0.1";
         internal const string Author = "RustyMods";
         private const string ModGUID = Author + "." + ModName;
-        private static string ConfigFileName = ModGUID + ".cfg";
-        private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
+        private static readonly string ConfigFileName = ModGUID + ".cfg";
+        private static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
         internal static string ConnectionError = "";
         private readonly Harmony _harmony = new(ModGUID);
         public static readonly ManualLogSource WelcomeLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
@@ -29,7 +29,7 @@ namespace Welcome
         public void Awake()
         {
             InitConfigs();
-            Intro.InitCustomIntro();
+            Intro.Setup();
             TextureManager.InitCustomBackground();
             Assembly assembly = Assembly.GetExecutingAssembly();
             _harmony.PatchAll(assembly);
@@ -38,7 +38,6 @@ namespace Welcome
 
         private void OnDestroy() => Config.Save();
 
-        #region Utils
         private void SetupWatcher()
         {
             FileSystemWatcher watcher = new(Paths.ConfigPath, ConfigFileName);
@@ -64,11 +63,7 @@ namespace Welcome
                 WelcomeLogger.LogError("Please check your config entries for spelling and format!");
             }
         }
-        #endregion
-
-
-        #region ConfigOptions
-
+        
         private static ConfigEntry<Toggle> _serverConfigLocked = null!;
         public static ConfigEntry<Toggle> _AlwaysShowIntro = null!;
         public static ConfigEntry<Toggle> _PluginEnabled = null!;
@@ -95,7 +90,6 @@ namespace Welcome
 
         }
 
-        #region ConfigMethods
         private ConfigEntry<T> config<T>(string group, string title, T value, ConfigDescription description,
             bool synchronizedSetting = true)
         {
@@ -139,8 +133,5 @@ namespace Welcome
             public override string ToDescriptionString() =>
                 "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
         }
-        #endregion
-
-        #endregion
     }
 }
